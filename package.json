@@ -1,0 +1,15 @@
+{
+  "name": "kalinga-backend",
+  "version": "1.0.0",
+  "description": "Kalinga Kitchen staff admin website and booking API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

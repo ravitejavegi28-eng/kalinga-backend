@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalinga Kitchen Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: Poppins, Arial, sans-serif;
+            background: #f5f2eb;
+            color: #1f1b16;
+            letter-spacing: 0;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            background: #23160f;
+            color: #fff;
+            padding: 18px 24px;
+            border-bottom: 4px solid #b98542;
+        }
+
+        .topbar-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand h1 {
+            font-family: "Playfair Display", Georgia, serif;
+            font-size: clamp(1.45rem, 3vw, 2rem);
+            color: #fff;
+            line-height: 1.1;
+        }
+
+        .brand p {
+            color: #d9c8ad;
+            margin-top: 4px;
+            font-size: 0.9rem;
+        }
+
+        .main {
+            width: min(1180px, calc(100% - 32px));
+            margin: 24px auto;
+            flex: 1;
+        }
+
+        .login-panel,
+        .dashboard {
+            background: #fffdf8;
+            border: 1px solid #ded4c4;
+            border-radius: 8px;
+            box-shadow: 0 12px 30px rgba(35, 22, 15, 0.08);
+        }
+
+        .login-panel {
+            max-width: 430px;
+            margin: 56px auto;
+            padding: 28px;
+        }
+
+        .login-panel h2,
+        .section-title {
+            font-family: "Playfair Display", Georgia, serif;
+            color: #23160f;
+        }
+
+        .login-panel h2 {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+        }
+
+        .login-panel p {
+            color: #6c5a49;
+            margin-bottom: 22px;
+            line-height: 1.6;
+        }
+
+        .field {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .field label {
+            color: #463629;
+            font-weight: 600;
+            font-size: 0.92rem;
+        }
+
+        .field input {
+            min-height: 46px;
+            border: 1px solid #cfc2ad;
+            border-radius: 6px;
+            padding: 10px 12px;
+            background: #fff;
+            color: #1f1b16;
+        }
+
+        .field input:focus {
+            outline: 3px solid rgba(185, 133, 66, 0.18);
+            border-color: #9b6e34;
+        }
+
+        .button {
+            min-height: 42px;
+            border: 0;
+            border-radius: 6px;
+            padding: 10px 16px;
+            background: #7b5a2b;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .button:hover {
+            background: #634721;
+        }
+
+        .button.secondary {
+            background: #eee7dc;
+            color: #2b2118;
+        }
+
+        .button.secondary:hover {
+            background: #e1d4c2;
+        }
+
+        .button.danger {
+            background: #b42318;
+        }
+
+        .button.danger:hover {
+            background: #921b13;
+        }
+
+        .button:disabled {
+            cursor: not-allowed;
+            opacity: 0.68;
+        }
+
+        .dashboard-header {
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            border-bottom: 1px solid #ded4c4;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(150px, 1fr));
+            gap: 12px;
+            padding: 18px 24px;
+            border-bottom: 1px solid #ded4c4;
+            background: #fbf7ef;
+        }
+
+        .stat {
+            background: #fff;
+            border: 1px solid #e4d8c7;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .stat-value {
+            font-size: 1.9rem;
+            color: #7b5a2b;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-label {
+            color: #6c5a49;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .message {
+            display: none;
+            margin: 18px 24px 0;
+            border-radius: 6px;
+            padding: 12px 14px;
+            font-weight: 600;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            padding: 24px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 900px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 13px 12px;
+            border-bottom: 1px solid #eadfce;
+            vertical-align: top;
+        }
+
+        th {
+            background: #efe6d8;
+            color: #2b2118;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+        }
+
+        tbody tr:hover {
+            background: #fbf7ef;
+        }
+
+        .id {
+            color: #7b5a2b;
+            font-weight: 800;
+        }
+
+        .guest {
+            color: #23160f;
+            font-weight: 700;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            border-radius: 999px;
+            padding: 4px 10px;
+            background: #e7f6f2;
+            color: #0f766e;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .request {
+            max-width: 260px;
+            color: #554536;
+            line-height: 1.5;
+        }
+
+        .empty {
+            padding: 52px 24px;
+            text-align: center;
+            color: #6c5a49;
+        }
+
+        .empty h2 {
+            font-family: "Playfair Display", Georgia, serif;
+            color: #23160f;
+            margin-bottom: 8px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 720px) {
+            .topbar {
+                padding: 16px;
+            }
+
+            .topbar-inner,
+            .dashboard-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .main {
+                width: calc(100% - 20px);
+                margin: 10px auto;
+            }
+
+            .login-panel {
+                margin: 28px auto;
+                padding: 22px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+                padding: 14px;
+            }
+
+            .dashboard-header,
+            .table-wrap {
+                padding: 18px 14px;
+            }
+
+            .dashboard-actions,
+            .dashboard-actions .button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <div class="topbar-inner">
+                <div class="brand">
+                    <h1>Kalinga Kitchen Staff</h1>
+                    <p>Reservations dashboard</p>
+                </div>
+                <button id="logoutBtn" class="button secondary hidden" type="button">Logout</button>
+            </div>
+        </header>
+
+        <main class="main">
+            <section id="loginPanel" class="login-panel">
+                <h2>Staff Login</h2>
+                <p>Use the admin password configured for this backend.</p>
+                <form id="loginForm">
+                    <div class="field">
+                        <label for="password">Admin password</label>
+                        <input id="password" name="password" type="password" autocomplete="current-password" required>
+                    </div>
+                    <button class="button" type="submit">Open Dashboard</button>
+                </form>
+            </section>
+
+            <section id="dashboard" class="dashboard hidden">
+                <div class="dashboard-header">
+                    <div>
+                        <h2 class="section-title">Table Bookings</h2>
+                        <p id="lastUpdated">Not loaded yet</p>
+                    </div>
+                    <div class="dashboard-actions">
+                        <button id="refreshBtn" class="button secondary" type="button">Refresh</button>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <div id="totalBookings" class="stat-value">0</div>
+                        <div class="stat-label">Total bookings</div>
+                    </div>
+                    <div class="stat">
+                        <div id="todayBookings" class="stat-value">0</div>
+                        <div class="stat-label">For today</div>
+                    </div>
+                    <div class="stat">
+                        <div id="upcomingBookings" class="stat-value">0</div>
+                        <div class="stat-label">Upcoming</div>
+                    </div>
+                </div>
+
+                <div id="message" class="message"></div>
+                <div id="bookingsContainer"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = (window.KALINGA_API_BASE_URL || '').replace(/\/$/, '');
+        const PASSWORD_KEY = 'kalinga_admin_password';
+        const loginPanel = document.getElementById('loginPanel');
+        const dashboard = document.getElementById('dashboard');
+        const loginForm = document.getElementById('loginForm');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const messageEl = document.getElementById('message');
+        const bookingsContainer = document.getElementById('bookingsContainer');
+
+        let refreshTimer;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (getPassword()) {
+                showDashboard();
+                loadBookings();
+            }
+        });
+
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const password = document.getElementById('password').value.trim();
+            sessionStorage.setItem(PASSWORD_KEY, password);
+            showDashboard();
+            await loadBookings();
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem(PASSWORD_KEY);
+            clearInterval(refreshTimer);
+            dashboard.classList.add('hidden');
+            logoutBtn.classList.add('hidden');
+            loginPanel.classList.remove('hidden');
+            document.getElementById('password').value = '';
+        });
+
+        refreshBtn.addEventListener('click', loadBookings);
+
+        function getPassword() {
+            return sessionStorage.getItem(PASSWORD_KEY) || '';
+        }
+
+        function showDashboard() {
+            loginPanel.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+            logoutBtn.classList.remove('hidden');
+            clearInterval(refreshTimer);
+            refreshTimer = setInterval(loadBookings, 30000);
+        }
+
+        async function apiRequest(path, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-Admin-Password': getPassword(),
+                ...(options.headers || {})
+            };
+
+            const response = await fetch(`${API_BASE_URL}${path}`, {
+                ...options,
+                headers
+            });
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    sessionStorage.removeItem(PASSWORD_KEY);
+                }
+
+                throw new Error(data?.error || `Request failed with status ${response.status}`);
+            }
+
+            return data;
+        }
+
+        async function loadBookings() {
+            refreshBtn.disabled = true;
+
+            try {
+                const bookings = await apiRequest('/api/bookings');
+                displayBookings(Array.isArray(bookings) ? bookings : []);
+                updateStats(Array.isArray(bookings) ? bookings : []);
+                document.getElementById('lastUpdated').textContent = `Last updated ${new Date().toLocaleTimeString('en-IN')}`;
+            } catch (error) {
+                showMessage(error.message, 'error');
+                if (!getPassword()) {
+                    dashboard.classList.add('hidden');
+                    logoutBtn.classList.add('hidden');
+                    loginPanel.classList.remove('hidden');
+                }
+            } finally {
+                refreshBtn.disabled = false;
+            }
+        }
+
+        function displayBookings(bookings) {
+            if (bookings.length === 0) {
+                bookingsContainer.innerHTML = `
+                    <div class="empty">
+                        <h2>No Bookings Yet</h2>
+                        <p>New customer reservations will appear here.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const rows = bookings.map((booking) => `
+                <tr>
+                    <td><span class="id">#${escapeHtml(String(booking.id))}</span></td>
+                    <td><span class="guest">${escapeHtml(booking.name)}</span></td>
+                    <td><a href="tel:${escapeHtml(booking.phone)}">${escapeHtml(booking.phone)}</a></td>
+                    <td>${formatDate(booking.date)}</td>
+                    <td><span class="pill">${escapeHtml(booking.time)}</span></td>
+                    <td>${escapeHtml(booking.guests)}</td>
+                    <td><div class="request">${booking.message ? escapeHtml(booking.message) : '-'}</div></td>
+                    <td>${formatSubmitted(booking.submittedAt)}</td>
+                    <td><button class="button danger" type="button" onclick="deleteBooking('${escapeHtml(String(booking.id))}')">Delete</button></td>
+                </tr>
+            `).join('');
+
+            bookingsContainer.innerHTML = `
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Guest</th>
+                                <th>Phone</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Guests</th>
+                                <th>Request</th>
+                                <th>Submitted</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function updateStats(bookings) {
+            const today = new Date().toISOString().slice(0, 10);
+            const todayCount = bookings.filter((booking) => booking.date === today).length;
+            const upcomingCount = bookings.filter((booking) => booking.date >= today).length;
+
+            document.getElementById('totalBookings').textContent = bookings.length;
+            document.getElementById('todayBookings').textContent = todayCount;
+            document.getElementById('upcomingBookings').textContent = upcomingCount;
+        }
+
+        async function deleteBooking(id) {
+            if (!confirm(`Delete booking #${id}?`)) {
+                return;
+            }
+
+            try {
+                await apiRequest(`/api/bookings/${encodeURIComponent(id)}`, {
+                    method: 'DELETE'
+                });
+                showMessage('Booking deleted.', 'success');
+                await loadBookings();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            messageEl.textContent = message;
+            messageEl.className = `message ${type} show`;
+
+            setTimeout(() => {
+                messageEl.className = 'message';
+            }, 3500);
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return '-';
+            }
+
+            const date = new Date(`${value}T00:00:00`);
+            if (Number.isNaN(date.getTime())) {
+                return escapeHtml(value);
+            }
+
+            return date.toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function formatSubmitted(value) {
+            if (!value) {
+                return '-';
+            }
+
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return escapeHtml(value);
+            }
+
+            return date.toLocaleString('en-IN', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            });
+        }
+
+        function escapeHtml(text) {
+            return String(text || '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
+        }
+    </script>
+</body>
+</html>
