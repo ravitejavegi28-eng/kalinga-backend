@@ -1,10 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { createBooking, deleteBooking, hasSupabaseConfig, listBookings } = require('./storage');
+const { createBooking, deleteBooking, hasSupabaseConfig, listBookings, updateBookingStatus } = require('./storage');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BOOKING_STATUSES = new Set(['pending', 'confirmed', 'cancelled']);
 
 app.use(cors({
     origin: true,
@@ -101,6 +102,27 @@ app.delete('/api/bookings/:id', requireAdmin, async (req, res) => {
     try {
         await deleteBooking(req.params.id);
         res.json({ success: true, message: 'Booking deleted' });
+    } catch (error) {
+        sendApiError(res, error);
+    }
+});
+
+app.patch('/api/bookings/:id/status', requireAdmin, async (req, res) => {
+    try {
+        const status = cleanString(req.body.status).toLowerCase();
+
+        if (!BOOKING_STATUSES.has(status)) {
+            return res.status(400).json({
+                error: 'Status must be pending, confirmed, or cancelled.'
+            });
+        }
+
+        const booking = await updateBookingStatus(req.params.id, status);
+        res.json({
+            success: true,
+            message: 'Booking status updated',
+            booking
+        });
     } catch (error) {
         sendApiError(res, error);
     }

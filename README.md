@@ -56,11 +56,28 @@ create table if not exists bookings (
   booking_time text not null,
   guests text not null,
   message text default '',
+  status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
   submitted_at timestamptz not null default now()
 );
 ```
 
 The backend uses the service role key, so customers never connect directly to Supabase.
+
+If your `bookings` table already exists, run this migration before using booking status updates:
+
+```sql
+alter table public.bookings
+add column if not exists status text not null default 'pending';
+
+do $$
+begin
+  alter table public.bookings
+  add constraint bookings_status_check
+  check (status in ('pending', 'confirmed', 'cancelled'));
+exception
+  when duplicate_object then null;
+end $$;
+```
 
 ## Customer Website Connection
 

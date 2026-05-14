@@ -209,6 +209,55 @@
             font-weight: 600;
         }
 
+        .filters {
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) 190px auto;
+            gap: 14px;
+            align-items: end;
+            padding: 18px 24px;
+            border-bottom: 1px solid #ded4c4;
+            background: #fffdf8;
+        }
+
+        .filter-field {
+            display: grid;
+            gap: 7px;
+        }
+
+        .filter-field label {
+            color: #463629;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .filter-field input {
+            min-height: 42px;
+            border: 1px solid #cfc2ad;
+            border-radius: 6px;
+            padding: 9px 12px;
+            background: #fff;
+            color: #1f1b16;
+        }
+
+        .filter-field input:focus {
+            outline: 3px solid rgba(185, 133, 66, 0.18);
+            border-color: #9b6e34;
+        }
+
+        .filter-actions {
+            display: grid;
+            gap: 7px;
+            justify-items: end;
+        }
+
+        .filter-summary {
+            color: #6c5a49;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-align: right;
+        }
+
         .message {
             display: none;
             margin: 18px 24px 0;
@@ -283,6 +332,35 @@
             font-weight: 700;
         }
 
+        .status-select {
+            min-height: 34px;
+            border: 1px solid #cfc2ad;
+            border-radius: 999px;
+            padding: 5px 10px;
+            background: #fff;
+            color: #2b2118;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
+        .status-select.pending {
+            border-color: #d6b36a;
+            background: #fff8e6;
+            color: #8a5b00;
+        }
+
+        .status-select.confirmed {
+            border-color: #86c7a0;
+            background: #ecfdf3;
+            color: #166534;
+        }
+
+        .status-select.cancelled {
+            border-color: #e5a1a1;
+            background: #fff1f2;
+            color: #9f1239;
+        }
+
         .request {
             max-width: 260px;
             color: #554536;
@@ -329,6 +407,19 @@
             .stats {
                 grid-template-columns: 1fr;
                 padding: 14px;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+                padding: 14px;
+            }
+
+            .filter-actions {
+                justify-items: stretch;
+            }
+
+            .filter-summary {
+                text-align: left;
             }
 
             .dashboard-header,
@@ -394,6 +485,21 @@
                     </div>
                 </div>
 
+                <div class="filters">
+                    <div class="filter-field">
+                        <label for="searchInput">Search</label>
+                        <input id="searchInput" type="search" placeholder="Guest name, phone, or booking ID">
+                    </div>
+                    <div class="filter-field">
+                        <label for="dateFilter">Booking date</label>
+                        <input id="dateFilter" type="date">
+                    </div>
+                    <div class="filter-actions">
+                        <button id="clearFiltersBtn" class="button secondary" type="button">Clear Filters</button>
+                        <p id="filterSummary" class="filter-summary">Showing all bookings</p>
+                    </div>
+                </div>
+
                 <div id="message" class="message"></div>
                 <div id="bookingsContainer"></div>
             </section>
@@ -410,7 +516,12 @@
         const refreshBtn = document.getElementById('refreshBtn');
         const messageEl = document.getElementById('message');
         const bookingsContainer = document.getElementById('bookingsContainer');
+        const searchInput = document.getElementById('searchInput');
+        const dateFilter = document.getElementById('dateFilter');
+        const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+        const filterSummary = document.getElementById('filterSummary');
 
+        let allBookings = [];
         let refreshTimer;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -438,6 +549,13 @@
         });
 
         refreshBtn.addEventListener('click', loadBookings);
+        searchInput.addEventListener('input', applyFilters);
+        dateFilter.addEventListener('change', applyFilters);
+        clearFiltersBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            dateFilter.value = '';
+            applyFilters();
+        });
 
         function getPassword() {
             return sessionStorage.getItem(PASSWORD_KEY) || '';
@@ -480,8 +598,9 @@
 
             try {
                 const bookings = await apiRequest('/api/bookings');
-                displayBookings(Array.isArray(bookings) ? bookings : []);
-                updateStats(Array.isArray(bookings) ? bookings : []);
+                allBookings = Array.isArray(bookings) ? bookings : [];
+                applyFilters();
+                updateStats(allBookings);
                 document.getElementById('lastUpdated').textContent = `Last updated ${new Date().toLocaleTimeString('en-IN')}`;
             } catch (error) {
                 showMessage(error.message, 'error');
@@ -495,12 +614,47 @@
             }
         }
 
-        function displayBookings(bookings) {
+        function applyFilters() {
+            const filteredBookings = getFilteredBookings();
+            displayBookings(filteredBookings, allBookings.length > 0);
+            updateFilterSummary(filteredBookings.length, allBookings.length);
+        }
+
+        function getFilteredBookings() {
+            const query = searchInput.value.trim().toLowerCase();
+            const selectedDate = dateFilter.value;
+
+            return allBookings.filter((booking) => {
+                const searchable = [
+                    booking.id,
+                    booking.name,
+                    booking.phone,
+                    booking.status
+                ].join(' ').toLowerCase();
+                const matchesSearch = !query || searchable.includes(query);
+                const matchesDate = !selectedDate || booking.date === selectedDate;
+
+                return matchesSearch && matchesDate;
+            });
+        }
+
+        function updateFilterSummary(visibleCount, totalCount) {
+            if (!totalCount) {
+                filterSummary.textContent = 'No bookings loaded';
+                return;
+            }
+
+            filterSummary.textContent = visibleCount === totalCount
+                ? `Showing all ${totalCount} bookings`
+                : `Showing ${visibleCount} of ${totalCount} bookings`;
+        }
+
+        function displayBookings(bookings, hasLoadedBookings = false) {
             if (bookings.length === 0) {
                 bookingsContainer.innerHTML = `
                     <div class="empty">
-                        <h2>No Bookings Yet</h2>
-                        <p>New customer reservations will appear here.</p>
+                        <h2>${hasLoadedBookings ? 'No Matching Bookings' : 'No Bookings Yet'}</h2>
+                        <p>${hasLoadedBookings ? 'Try a different search or date filter.' : 'New customer reservations will appear here.'}</p>
                     </div>
                 `;
                 return;
@@ -514,6 +668,7 @@
                     <td>${formatDate(booking.date)}</td>
                     <td><span class="pill">${escapeHtml(booking.time)}</span></td>
                     <td>${escapeHtml(booking.guests)}</td>
+                    <td>${renderStatusSelect(booking)}</td>
                     <td><div class="request">${booking.message ? escapeHtml(booking.message) : '-'}</div></td>
                     <td>${formatSubmitted(booking.submittedAt)}</td>
                     <td><button class="button danger" type="button" onclick="deleteBooking('${escapeHtml(String(booking.id))}')">Delete</button></td>
@@ -531,6 +686,7 @@
                                 <th>Date</th>
                                 <th>Time</th>
                                 <th>Guests</th>
+                                <th>Status</th>
                                 <th>Request</th>
                                 <th>Submitted</th>
                                 <th>Action</th>
@@ -550,6 +706,32 @@
             document.getElementById('totalBookings').textContent = bookings.length;
             document.getElementById('todayBookings').textContent = todayCount;
             document.getElementById('upcomingBookings').textContent = upcomingCount;
+        }
+
+        async function updateBookingStatus(id, status) {
+            try {
+                const result = await apiRequest(`/api/bookings/${encodeURIComponent(id)}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status })
+                });
+
+                allBookings = allBookings.map((booking) => {
+                    if (String(booking.id) !== String(id)) {
+                        return booking;
+                    }
+
+                    return result.booking || {
+                        ...booking,
+                        status
+                    };
+                });
+
+                applyFilters();
+                showMessage(`Booking #${id} marked ${status}.`, 'success');
+            } catch (error) {
+                showMessage(getStatusErrorMessage(error), 'error');
+                await loadBookings();
+            }
         }
 
         async function deleteBooking(id) {
@@ -575,6 +757,41 @@
             setTimeout(() => {
                 messageEl.className = 'message';
             }, 3500);
+        }
+
+        function renderStatusSelect(booking) {
+            const id = escapeHtml(String(booking.id));
+            const status = normalizeStatus(booking.status);
+
+            return `
+                <select class="status-select ${status}" onchange="updateBookingStatus('${id}', this.value)">
+                    ${statusOption('pending', status)}
+                    ${statusOption('confirmed', status)}
+                    ${statusOption('cancelled', status)}
+                </select>
+            `;
+        }
+
+        function statusOption(value, currentStatus) {
+            const selected = value === currentStatus ? ' selected' : '';
+            return `<option value="${value}"${selected}>${capitalize(value)}</option>`;
+        }
+
+        function normalizeStatus(value) {
+            const status = String(value || 'pending').toLowerCase();
+            return ['pending', 'confirmed', 'cancelled'].includes(status) ? status : 'pending';
+        }
+
+        function capitalize(value) {
+            return value.charAt(0).toUpperCase() + value.slice(1);
+        }
+
+        function getStatusErrorMessage(error) {
+            if (/status.*column|column.*status|schema cache/i.test(error.message)) {
+                return 'Status column is missing in Supabase. Run the status migration SQL, then redeploy/retry.';
+            }
+
+            return error.message;
         }
 
         function formatDate(value) {

@@ -64,6 +64,7 @@ function normalizeBooking(row) {
         time: row.booking_time || row.time,
         guests: row.guests,
         message: row.message || '',
+        status: row.status || 'pending',
         submittedAt: row.submitted_at || row.submittedAt
     };
 }
@@ -80,6 +81,7 @@ async function createBooking(input) {
         time: input.time,
         guests: input.guests,
         message: input.message || '',
+        status: 'pending',
         submittedAt
     };
 
@@ -156,9 +158,43 @@ async function deleteBooking(id) {
     writeLocalBookings(bookings.filter((booking) => Number(booking.id) !== Number(id)));
 }
 
+async function updateBookingStatus(id, status) {
+    requireProductionStorage();
+
+    const supabase = getSupabase();
+    if (supabase) {
+        const { data, error } = await supabase
+            .from(TABLE_NAME)
+            .update({ status })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            throw error;
+        }
+
+        return normalizeBooking(data);
+    }
+
+    const bookings = readLocalBookings();
+    const booking = bookings.find((item) => Number(item.id) === Number(id));
+
+    if (!booking) {
+        const error = new Error('Booking not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    booking.status = status;
+    writeLocalBookings(bookings);
+    return normalizeBooking(booking);
+}
+
 module.exports = {
     createBooking,
     deleteBooking,
     hasSupabaseConfig,
-    listBookings
+    listBookings,
+    updateBookingStatus
 };
