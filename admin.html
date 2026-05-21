@@ -710,7 +710,8 @@
 
         async function updateBookingStatus(id, status) {
             const existingBooking = allBookings.find((booking) => String(booking.id) === String(id));
-            const whatsappWindow = status === 'confirmed' && existingBooking
+            const shouldOpenWhatsApp = ['confirmed', 'cancelled'].includes(status) && existingBooking;
+            const whatsappWindow = shouldOpenWhatsApp
                 ? window.open('', '_blank')
                 : null;
 
@@ -735,9 +736,9 @@
 
                 applyFilters();
 
-                if (status === 'confirmed') {
-                    openWhatsAppConfirmation(updatedBooking, whatsappWindow);
-                    showMessage(`Booking #${id} marked confirmed. WhatsApp confirmation is ready to send.`, 'success');
+                if (['confirmed', 'cancelled'].includes(status)) {
+                    openWhatsAppStatusMessage(updatedBooking, status, whatsappWindow);
+                    showMessage(`Booking #${id} marked ${status}. WhatsApp message is ready to send.`, 'success');
                     return;
                 }
 
@@ -812,11 +813,11 @@
             return error.message;
         }
 
-        function openWhatsAppConfirmation(booking, preparedWindow) {
-            const url = createWhatsAppConfirmationUrl(booking);
+        function openWhatsAppStatusMessage(booking, status, preparedWindow) {
+            const url = createWhatsAppStatusUrl(booking, status);
 
             if (!url) {
-                showMessage('Booking confirmed, but this phone number is not valid for WhatsApp.', 'error');
+                showMessage(`Booking marked ${status}, but this phone number is not valid for WhatsApp.`, 'error');
                 return;
             }
 
@@ -828,23 +829,40 @@
             window.open(url, '_blank');
         }
 
-        function createWhatsAppConfirmationUrl(booking) {
+        function createWhatsAppStatusUrl(booking, status) {
             const phone = normalizeWhatsAppPhone(booking.phone);
 
             if (!phone) {
                 return '';
             }
 
-            const message = [
+            const message = status === 'cancelled'
+                ? createCancellationMessage(booking)
+                : createConfirmationMessage(booking);
+
+            return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        }
+
+        function createConfirmationMessage(booking) {
+            return [
                 `Hello ${booking.name || 'Guest'},`,
-                `Your table is confirmed at Kalinga Kitchen & Bar.`,
+                'Your table is confirmed at Kalinga Kitchen & Bar.',
                 `Date: ${formatDate(booking.date)}`,
                 `Time: ${booking.time || '-'}`,
                 `Guests: ${booking.guests || '-'}`,
                 'Thank you.'
             ].join('\n');
+        }
 
-            return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        function createCancellationMessage(booking) {
+            return [
+                `Hello ${booking.name || 'Guest'},`,
+                'Your table booking at Kalinga Kitchen & Bar has been cancelled.',
+                `Date: ${formatDate(booking.date)}`,
+                `Time: ${booking.time || '-'}`,
+                `Guests: ${booking.guests || '-'}`,
+                'Please contact us if you want to book again. Thank you.'
+            ].join('\n');
         }
 
         function normalizeWhatsAppPhone(value) {
