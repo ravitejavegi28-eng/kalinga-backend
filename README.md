@@ -63,7 +63,7 @@ create table if not exists bookings (
 
 The backend uses the service role key, so customers never connect directly to Supabase.
 
-If your `bookings` table already exists, run this migration before using booking status updates:
+If your `bookings` table already exists, this migration is recommended for a cleaner database schema. The backend can still save booking status without it by using a hidden marker in the existing `message` field.
 
 ```sql
 alter table public.bookings

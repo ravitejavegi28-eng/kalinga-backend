@@ -4,6 +4,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const BOOKINGS_FILE = process.env.BOOKINGS_FILE || path.join(__dirname, 'bookings.json');
 const TABLE_NAME = process.env.SUPABASE_BOOKINGS_TABLE || 'bookings';
+const STATUS_MARKER_PATTERN = /^\[booking-status:(pending|confirmed|cancelled)\]\s*/i;
 
 let supabaseClient;
 
@@ -55,7 +56,40 @@ function writeLocalBookings(bookings) {
     fs.writeFileSync(BOOKINGS_FILE, JSON.stringify({ bookings }, null, 2));
 }
 
+function normalizeStatus(value) {
+    const status = String(value || 'pending').toLowerCase();
+    return ['pending', 'confirmed', 'cancelled'].includes(status) ? status : 'pending';
+}
+
+function parseStoredMessage(value) {
+    const rawMessage = String(value || '');
+    const match = rawMessage.match(STATUS_MARKER_PATTERN);
+
+    return {
+        message: rawMessage.replace(STATUS_MARKER_PATTERN, ''),
+        status: normalizeStatus(match ? match[1] : 'pending')
+    };
+}
+
+function messageWithStatus(value, status) {
+    const cleanMessage = parseStoredMessage(value).message.trim();
+    const cleanStatus = normalizeStatus(status);
+
+    if (cleanStatus === 'pending') {
+        return cleanMessage;
+    }
+
+    return `[booking-status:${cleanStatus}] ${cleanMessage}`.trim();
+}
+
+function isMissingStatusColumn(error) {
+    const message = `${error?.code || ''} ${error?.message || ''} ${error?.details || ''}`;
+    return /status/i.test(message) && /column|schema cache|PGRST204/i.test(message);
+}
+
 function normalizeBooking(row) {
+    const parsedMessage = parseStoredMessage(row.message);
+
     return {
         id: row.id,
         name: row.name,
@@ -63,8 +97,8 @@ function normalizeBooking(row) {
         date: row.booking_date || row.date,
         time: row.booking_time || row.time,
         guests: row.guests,
-        message: row.message || '',
-        status: row.status || 'pending',
+        message: parsedMessage.message,
+        status: normalizeStatus(row.status || parsedMessage.status),
         submittedAt: row.submitted_at || row.submittedAt
     };
 }
@@ -160,18 +194,23 @@ async function deleteBooking(id) {
 
 async function updateBookingStatus(id, status) {
     requireProductionStorage();
+    const cleanStatus = normalizeStatus(status);
 
     const supabase = getSupabase();
     if (supabase) {
         const { data, error } = await supabase
             .from(TABLE_NAME)
-            .update({ status })
+            .update({ status: cleanStatus })
             .eq('id', id)
             .select()
             .single();
 
         if (error) {
-            throw error;
+            if (!isMissingStatusColumn(error)) {
+                throw error;
+            }
+
+            return updateBookingStatusInMessage(supabase, id, cleanStatus);
         }
 
         return normalizeBooking(data);
@@ -186,9 +225,36 @@ async function updateBookingStatus(id, status) {
         throw error;
     }
 
-    booking.status = status;
+    booking.status = cleanStatus;
     writeLocalBookings(bookings);
     return normalizeBooking(booking);
+}
+
+async function updateBookingStatusInMessage(supabase, id, status) {
+    const { data: existingBooking, error: fetchError } = await supabase
+        .from(TABLE_NAME)
+        .select('id, name, phone, booking_date, booking_time, guests, message, submitted_at')
+        .eq('id', id)
+        .single();
+
+    if (fetchError) {
+        throw fetchError;
+    }
+
+    const { data, error } = await supabase
+        .from(TABLE_NAME)
+        .update({
+            message: messageWithStatus(existingBooking.message, status)
+        })
+        .eq('id', id)
+        .select('id, name, phone, booking_date, booking_time, guests, message, submitted_at')
+        .single();
+
+    if (error) {
+        throw error;
+    }
+
+    return normalizeBooking(data);
 }
 
 module.exports = {

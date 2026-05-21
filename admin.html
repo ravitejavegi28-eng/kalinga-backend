@@ -788,7 +788,7 @@
 
         function getStatusErrorMessage(error) {
             if (/status.*column|column.*status|schema cache/i.test(error.message)) {
-                return 'Status column is missing in Supabase. Run the status migration SQL, then redeploy/retry.';
+                return 'Could not save booking status. Please refresh and try again.';
             }
 
             return error.message;
