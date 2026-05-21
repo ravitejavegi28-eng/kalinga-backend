@@ -709,26 +709,44 @@
         }
 
         async function updateBookingStatus(id, status) {
+            const existingBooking = allBookings.find((booking) => String(booking.id) === String(id));
+            const whatsappWindow = status === 'confirmed' && existingBooking
+                ? window.open('', '_blank')
+                : null;
+
             try {
                 const result = await apiRequest(`/api/bookings/${encodeURIComponent(id)}/status`, {
                     method: 'PATCH',
                     body: JSON.stringify({ status })
                 });
 
+                const updatedBooking = result.booking || {
+                    ...existingBooking,
+                    status
+                };
+
                 allBookings = allBookings.map((booking) => {
                     if (String(booking.id) !== String(id)) {
                         return booking;
                     }
 
-                    return result.booking || {
-                        ...booking,
-                        status
-                    };
+                    return updatedBooking;
                 });
 
                 applyFilters();
+
+                if (status === 'confirmed') {
+                    openWhatsAppConfirmation(updatedBooking, whatsappWindow);
+                    showMessage(`Booking #${id} marked confirmed. WhatsApp confirmation is ready to send.`, 'success');
+                    return;
+                }
+
                 showMessage(`Booking #${id} marked ${status}.`, 'success');
             } catch (error) {
+                if (whatsappWindow && !whatsappWindow.closed) {
+                    whatsappWindow.close();
+                }
+
                 showMessage(getStatusErrorMessage(error), 'error');
                 await loadBookings();
             }
@@ -792,6 +810,59 @@
             }
 
             return error.message;
+        }
+
+        function openWhatsAppConfirmation(booking, preparedWindow) {
+            const url = createWhatsAppConfirmationUrl(booking);
+
+            if (!url) {
+                showMessage('Booking confirmed, but this phone number is not valid for WhatsApp.', 'error');
+                return;
+            }
+
+            if (preparedWindow) {
+                preparedWindow.location.href = url;
+                return;
+            }
+
+            window.open(url, '_blank');
+        }
+
+        function createWhatsAppConfirmationUrl(booking) {
+            const phone = normalizeWhatsAppPhone(booking.phone);
+
+            if (!phone) {
+                return '';
+            }
+
+            const message = [
+                `Hello ${booking.name || 'Guest'},`,
+                `Your table is confirmed at Kalinga Kitchen & Bar.`,
+                `Date: ${formatDate(booking.date)}`,
+                `Time: ${booking.time || '-'}`,
+                `Guests: ${booking.guests || '-'}`,
+                'Thank you.'
+            ].join('\n');
+
+            return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        }
+
+        function normalizeWhatsAppPhone(value) {
+            const digits = String(value || '').replace(/\D/g, '');
+
+            if (digits.length === 10) {
+                return `91${digits}`;
+            }
+
+            if (digits.length === 11 && digits.startsWith('0')) {
+                return `91${digits.slice(1)}`;
+            }
+
+            if (digits.length >= 11 && digits.length <= 15) {
+                return digits;
+            }
+
+            return '';
         }
 
         function formatDate(value) {
