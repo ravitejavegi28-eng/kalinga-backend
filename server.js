@@ -14,6 +14,7 @@ app.use(cors({
 }));
 app.options('*', cors());
 app.use(express.json({ limit: '20kb' }));
+app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 
 function cleanString(value) {
     return String(value || '').trim();
