@@ -699,7 +699,7 @@
         }
 
         function updateStats(bookings) {
-            const today = new Date().toISOString().slice(0, 10);
+            const today = getTodayDateString();
             const todayCount = bookings.filter((booking) => booking.date === today).length;
             const upcomingCount = bookings.filter((booking) => booking.date >= today).length;
 
@@ -881,6 +881,18 @@
             }
 
             return '';
+        }
+
+        function getTodayDateString() {
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).formatToParts(new Date());
+            const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+            return `${values.year}-${values.month}-${values.day}`;
         }
 
         function formatDate(value) {
