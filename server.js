@@ -6,6 +6,7 @@ const { createBooking, deleteBooking, hasSupabaseConfig, listBookings, updateBoo
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOOKING_STATUSES = new Set(['pending', 'confirmed', 'cancelled']);
+const BUSINESS_TIME_ZONE = process.env.BOOKING_TIME_ZONE || 'Asia/Kolkata';
 
 app.use(cors({
     origin: true,
@@ -18,6 +19,22 @@ app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 
 function cleanString(value) {
     return String(value || '').trim();
+}
+
+function getTodayDateString() {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: BUSINESS_TIME_ZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+    return `${values.year}-${values.month}-${values.day}`;
+}
+
+function isValidDateString(value) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function getAdminPassword() {
@@ -76,6 +93,14 @@ app.post('/api/bookings', async (req, res) => {
 
         if (!bookingInput.name || !bookingInput.phone || !bookingInput.date || !bookingInput.time || !bookingInput.guests) {
             return res.status(400).json({ error: 'Please fill all required fields.' });
+        }
+
+        if (!isValidDateString(bookingInput.date)) {
+            return res.status(400).json({ error: 'Please choose a valid booking date.' });
+        }
+
+        if (bookingInput.date < getTodayDateString()) {
+            return res.status(400).json({ error: 'Please choose today or a future date for your reservation.' });
         }
 
         const booking = await createBooking(bookingInput);
