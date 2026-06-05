@@ -76,6 +76,7 @@
             border: 1px solid #ded4c4;
             border-radius: 8px;
             box-shadow: 0 12px 30px rgba(35, 22, 15, 0.08);
+            overflow: hidden;
         }
 
         .login-panel {
@@ -135,10 +136,13 @@
             background: #7b5a2b;
             color: #fff;
             font-weight: 700;
+            transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
         }
 
         .button:hover {
             background: #634721;
+            box-shadow: 0 8px 18px rgba(35, 22, 15, 0.12);
+            transform: translateY(-1px);
         }
 
         .button.secondary {
@@ -170,6 +174,18 @@
             justify-content: space-between;
             gap: 16px;
             border-bottom: 1px solid #ded4c4;
+            background: linear-gradient(180deg, #fffdf8, #fbf7ef);
+        }
+
+        .section-title {
+            font-size: clamp(1.45rem, 3vw, 2rem);
+            line-height: 1.1;
+        }
+
+        #lastUpdated {
+            margin-top: 6px;
+            color: #6c5a49;
+            font-size: 0.9rem;
         }
 
         .dashboard-actions {
@@ -193,6 +209,8 @@
             border: 1px solid #e4d8c7;
             border-radius: 8px;
             padding: 16px;
+            border-top: 4px solid #b98542;
+            box-shadow: 0 8px 18px rgba(35, 22, 15, 0.05);
         }
 
         .stat-value {
@@ -283,6 +301,7 @@
         .table-wrap {
             overflow-x: auto;
             padding: 24px;
+            background: #fffdf8;
         }
 
         table {
@@ -304,6 +323,7 @@
             color: #2b2118;
             font-size: 0.82rem;
             text-transform: uppercase;
+            letter-spacing: 0.02em;
         }
 
         tbody tr:hover {
@@ -341,6 +361,7 @@
             color: #2b2118;
             font-weight: 700;
             text-transform: capitalize;
+            cursor: pointer;
         }
 
         .status-select.pending {
@@ -371,6 +392,10 @@
             padding: 52px 24px;
             text-align: center;
             color: #6c5a49;
+            background: #fffdf8;
+            border: 1px dashed #d8c8b3;
+            border-radius: 8px;
+            margin: 24px;
         }
 
         .empty h2 {
@@ -429,6 +454,82 @@
 
             .dashboard-actions,
             .dashboard-actions .button {
+                width: 100%;
+            }
+
+            .message {
+                margin: 14px 14px 0;
+            }
+
+            .empty {
+                margin: 14px;
+                padding: 32px 16px;
+            }
+
+            .table-wrap {
+                overflow: visible;
+            }
+
+            table {
+                min-width: 0;
+            }
+
+            thead {
+                display: none;
+            }
+
+            table,
+            tbody,
+            tr,
+            td {
+                display: block;
+                width: 100%;
+            }
+
+            tbody {
+                display: grid;
+                gap: 14px;
+            }
+
+            tbody tr {
+                background: #fff;
+                border: 1px solid #e4d8c7;
+                border-radius: 8px;
+                box-shadow: 0 10px 24px rgba(35, 22, 15, 0.08);
+                overflow: hidden;
+            }
+
+            tbody tr:hover {
+                background: #fff;
+            }
+
+            td {
+                display: grid;
+                grid-template-columns: 96px minmax(0, 1fr);
+                gap: 10px;
+                align-items: center;
+                padding: 11px 14px;
+                border-bottom: 1px solid #f0e6d8;
+            }
+
+            td::before {
+                content: attr(data-label);
+                color: #6c5a49;
+                font-size: 0.74rem;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            td:last-child {
+                border-bottom: none;
+            }
+
+            .request {
+                max-width: none;
+            }
+
+            .status-select,
+            td .button {
                 width: 100%;
             }
         }
@@ -662,16 +763,16 @@
 
             const rows = bookings.map((booking) => `
                 <tr>
-                    <td><span class="id">#${escapeHtml(String(booking.id))}</span></td>
-                    <td><span class="guest">${escapeHtml(booking.name)}</span></td>
-                    <td><a href="tel:${escapeHtml(booking.phone)}">${escapeHtml(booking.phone)}</a></td>
-                    <td>${formatDate(booking.date)}</td>
-                    <td><span class="pill">${escapeHtml(booking.time)}</span></td>
-                    <td>${escapeHtml(booking.guests)}</td>
-                    <td>${renderStatusSelect(booking)}</td>
-                    <td><div class="request">${booking.message ? escapeHtml(booking.message) : '-'}</div></td>
-                    <td>${formatSubmitted(booking.submittedAt)}</td>
-                    <td><button class="button danger" type="button" onclick="deleteBooking('${escapeHtml(String(booking.id))}')">Delete</button></td>
+                    <td data-label="ID"><span class="id">#${escapeHtml(String(booking.id))}</span></td>
+                    <td data-label="Guest"><span class="guest">${escapeHtml(booking.name)}</span></td>
+                    <td data-label="Phone"><a href="tel:${escapeHtml(booking.phone)}">${escapeHtml(booking.phone)}</a></td>
+                    <td data-label="Date">${formatDate(booking.date)}</td>
+                    <td data-label="Time"><span class="pill">${escapeHtml(booking.time)}</span></td>
+                    <td data-label="Guests">${escapeHtml(booking.guests)}</td>
+                    <td data-label="Status">${renderStatusSelect(booking)}</td>
+                    <td data-label="Request"><div class="request">${booking.message ? escapeHtml(booking.message) : '-'}</div></td>
+                    <td data-label="Submitted">${formatSubmitted(booking.submittedAt)}</td>
+                    <td data-label="Action"><button class="button danger" type="button" onclick="deleteBooking('${escapeHtml(String(booking.id))}')">Delete</button></td>
                 </tr>
             `).join('');
 
