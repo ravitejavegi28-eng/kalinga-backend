@@ -243,6 +243,12 @@
             gap: 7px;
         }
 
+        .date-picker-field,
+        .date-picker-field label,
+        .date-picker-field input {
+            cursor: pointer;
+        }
+
         .filter-field label {
             color: #463629;
             font-size: 0.82rem;
@@ -592,7 +598,7 @@
                         <label for="searchInput">Search</label>
                         <input id="searchInput" type="search" placeholder="Guest name, phone, or booking ID">
                     </div>
-                    <div class="filter-field">
+                    <div class="filter-field date-picker-field">
                         <label for="dateFilter">Booking date</label>
                         <input id="dateFilter" type="date">
                     </div>
@@ -653,11 +659,38 @@
         refreshBtn.addEventListener('click', loadBookings);
         searchInput.addEventListener('input', applyFilters);
         dateFilter.addEventListener('change', applyFilters);
+        connectDatePickerField(dateFilter);
         clearFiltersBtn.addEventListener('click', () => {
             searchInput.value = '';
             dateFilter.value = '';
             applyFilters();
         });
+
+        function openDatePicker(input) {
+            input.focus({ preventScroll: true });
+
+            if (typeof input.showPicker === 'function') {
+                try {
+                    input.showPicker();
+                } catch (error) {
+                    input.focus();
+                }
+            }
+        }
+
+        function connectDatePickerField(input) {
+            const field = input.closest('.date-picker-field');
+
+            input.addEventListener('click', () => openDatePicker(input));
+
+            if (field) {
+                field.addEventListener('click', (event) => {
+                    if (event.target !== input) {
+                        openDatePicker(input);
+                    }
+                });
+            }
+        }
 
         function getPassword() {
             return sessionStorage.getItem(PASSWORD_KEY) || '';
