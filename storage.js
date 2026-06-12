@@ -5,7 +5,6 @@ const { createClient } = require('@supabase/supabase-js');
 const BOOKINGS_FILE = process.env.BOOKINGS_FILE || path.join(__dirname, 'bookings.json');
 const TABLE_NAME = process.env.SUPABASE_BOOKINGS_TABLE || 'bookings';
 const STATUS_MARKER_PATTERN = /^\[booking-status:(pending|confirmed|cancelled)\]\s*/i;
-const BUSINESS_TIME_ZONE = process.env.BOOKING_TIME_ZONE || 'Asia/Kolkata';
 
 let supabaseClient;
 
@@ -55,24 +54,6 @@ function readLocalBookings() {
 
 function writeLocalBookings(bookings) {
     fs.writeFileSync(BOOKINGS_FILE, JSON.stringify({ bookings }, null, 2));
-}
-
-function getTodayDateString() {
-    const parts = new Intl.DateTimeFormat('en-US', {
-        timeZone: BUSINESS_TIME_ZONE,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    }).formatToParts(new Date());
-    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-
-    return `${values.year}-${values.month}-${values.day}`;
-}
-
-function hasPastBookingDate(value, today = getTodayDateString()) {
-    const date = String(value || '').slice(0, 10);
-
-    return /^\d{4}-\d{2}-\d{2}$/.test(date) && date < today;
 }
 
 function normalizeStatus(value) {
@@ -170,7 +151,6 @@ async function createBooking(input) {
 
 async function listBookings() {
     requireProductionStorage();
-    await deletePastBookings();
 
     const supabase = getSupabase();
     if (supabase) {
@@ -189,31 +169,6 @@ async function listBookings() {
     return readLocalBookings().sort((a, b) => {
         return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
     });
-}
-
-async function deletePastBookings() {
-    const today = getTodayDateString();
-    const supabase = getSupabase();
-
-    if (supabase) {
-        const { error } = await supabase
-            .from(TABLE_NAME)
-            .delete()
-            .lt('booking_date', today);
-
-        if (error) {
-            throw error;
-        }
-
-        return;
-    }
-
-    const bookings = readLocalBookings();
-    const activeBookings = bookings.filter((booking) => !hasPastBookingDate(booking.date, today));
-
-    if (activeBookings.length !== bookings.length) {
-        writeLocalBookings(activeBookings);
-    }
 }
 
 async function deleteBooking(id) {
