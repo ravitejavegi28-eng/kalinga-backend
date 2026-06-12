@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="#fffaf6"/>
+  <circle cx="64" cy="38" r="20" fill="none" stroke="#8b6f47" stroke-width="5"/>
+  <circle cx="64" cy="38" r="5" fill="#8b6f47"/>
+  <path d="M64 14v16M64 46v16M40 38h16M72 38h16M47 21l11 11M70 44l11 11M81 21 70 32M58 44 47 55" stroke="#8b6f47" stroke-width="4" stroke-linecap="round"/>
+  <text x="64" y="93" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700" fill="#2c1810">K</text>
+</svg>
