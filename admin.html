@@ -747,6 +747,7 @@
 
         let allBookings = [];
         let refreshTimer;
+        let activeDatePreset = 'all';
 
         document.addEventListener('DOMContentLoaded', () => {
             if (getPassword()) {
@@ -775,14 +776,19 @@
         refreshBtn.addEventListener('click', loadBookings);
         exportCsvBtn.addEventListener('click', exportFilteredBookings);
         searchInput.addEventListener('input', applyFilters);
-        dateFilter.addEventListener('change', applyFilters);
+        dateFilter.addEventListener('change', () => {
+            activeDatePreset = getQuickFilterForDate(dateFilter.value);
+            applyFilters();
+        });
         connectDatePickerField(dateFilter);
         quickFilterButtons.forEach((button) => {
             button.addEventListener('click', () => setQuickDateFilter(button.dataset.dateFilter));
         });
+        activeDatePreset = getQuickFilterForDate(dateFilter.value);
         clearFiltersBtn.addEventListener('click', () => {
             searchInput.value = '';
             dateFilter.value = '';
+            activeDatePreset = 'all';
             applyFilters();
         });
 
@@ -879,6 +885,7 @@
         function getFilteredBookings() {
             const query = searchInput.value.trim().toLowerCase();
             const selectedDate = dateFilter.value;
+            const shouldHideCancelled = ['today', 'tomorrow', 'yesterday'].includes(activeDatePreset);
 
             return allBookings.filter((booking) => {
                 const searchable = [
@@ -889,8 +896,9 @@
                 ].join(' ').toLowerCase();
                 const matchesSearch = !query || searchable.includes(query);
                 const matchesDate = !selectedDate || booking.date === selectedDate;
+                const matchesStatus = !shouldHideCancelled || normalizeStatus(booking.status) !== 'cancelled';
 
-                return matchesSearch && matchesDate;
+                return matchesSearch && matchesDate && matchesStatus;
             });
         }
 
@@ -956,8 +964,9 @@
 
         function updateStats(bookings) {
             const today = getTodayDateString();
-            const todayCount = bookings.filter((booking) => booking.date === today).length;
-            const upcomingCount = bookings.filter((booking) => booking.date >= today).length;
+            const activeBookings = bookings.filter((booking) => normalizeStatus(booking.status) !== 'cancelled');
+            const todayCount = activeBookings.filter((booking) => booking.date === today).length;
+            const upcomingCount = activeBookings.filter((booking) => booking.date >= today).length;
             const pendingCount = bookings.filter((booking) => normalizeStatus(booking.status) === 'pending').length;
             const confirmedCount = bookings.filter((booking) => normalizeStatus(booking.status) === 'confirmed').length;
             const cancelledCount = bookings.filter((booking) => normalizeStatus(booking.status) === 'cancelled').length;
@@ -1075,6 +1084,8 @@
         }
 
         function setQuickDateFilter(filter) {
+            activeDatePreset = filter || 'all';
+
             if (filter === 'today') {
                 dateFilter.value = getTodayDateString();
             } else if (filter === 'tomorrow') {
@@ -1089,20 +1100,29 @@
         }
 
         function syncQuickFilterButtons() {
-            const selectedDate = dateFilter.value;
-            const activeFilter = selectedDate === getTodayDateString()
-                ? 'today'
-                : selectedDate === getRelativeDateString(1)
-                    ? 'tomorrow'
-                    : selectedDate === getRelativeDateString(-1)
-                        ? 'yesterday'
-                        : selectedDate
-                            ? ''
-                            : 'all';
-
             quickFilterButtons.forEach((button) => {
-                button.classList.toggle('active', button.dataset.dateFilter === activeFilter);
+                button.classList.toggle('active', button.dataset.dateFilter === activeDatePreset);
             });
+        }
+
+        function getQuickFilterForDate(selectedDate) {
+            if (!selectedDate) {
+                return 'all';
+            }
+
+            if (selectedDate === getTodayDateString()) {
+                return 'today';
+            }
+
+            if (selectedDate === getRelativeDateString(1)) {
+                return 'tomorrow';
+            }
+
+            if (selectedDate === getRelativeDateString(-1)) {
+                return 'yesterday';
+            }
+
+            return '';
         }
 
         function showMessage(message, type) {
