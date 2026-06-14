@@ -499,14 +499,27 @@
         }
 
         @media (max-width: 720px) {
+            body {
+                background: #fbf7ef;
+            }
+
             .topbar {
-                padding: 16px;
+                padding: 14px 16px;
             }
 
             .topbar-inner,
             .dashboard-header {
                 align-items: flex-start;
                 flex-direction: column;
+            }
+
+            .brand h1 {
+                font-size: 1.45rem;
+            }
+
+            .brand p,
+            #lastUpdated {
+                font-size: 0.82rem;
             }
 
             .main {
@@ -525,16 +538,32 @@
             }
 
             .stat {
-                padding: 14px;
+                padding: 12px;
             }
 
             .stat-value {
                 font-size: 1.55rem;
             }
 
+            .stat-label {
+                font-size: 0.78rem;
+            }
+
             .filters {
                 grid-template-columns: 1fr;
                 padding: 14px;
+                gap: 12px;
+            }
+
+            .quick-filters {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+            }
+
+            .quick-filter {
+                width: 100%;
+                min-height: 40px;
             }
 
             .filter-actions {
@@ -553,6 +582,12 @@
             .dashboard-actions,
             .dashboard-actions .button {
                 width: 100%;
+            }
+
+            .dashboard-actions {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
             }
 
             .message {
@@ -586,7 +621,7 @@
 
             tbody {
                 display: grid;
-                gap: 14px;
+                gap: 12px;
             }
 
             tbody tr {
@@ -603,17 +638,30 @@
 
             td {
                 display: grid;
-                grid-template-columns: 96px minmax(0, 1fr);
+                grid-template-columns: 84px minmax(0, 1fr);
                 gap: 10px;
                 align-items: center;
-                padding: 11px 14px;
+                padding: 10px 12px;
                 border-bottom: 1px solid #f0e6d8;
+            }
+
+            td[data-label="ID"] {
+                background: #fbf7ef;
+            }
+
+            td[data-label="Guest"] {
+                align-items: start;
+            }
+
+            .guest {
+                font-size: 1rem;
+                line-height: 1.35;
             }
 
             td::before {
                 content: attr(data-label);
                 color: #6c5a49;
-                font-size: 0.74rem;
+                font-size: 0.7rem;
                 font-weight: 800;
                 text-transform: uppercase;
             }
@@ -629,10 +677,24 @@
             .status-select,
             td .button {
                 width: 100%;
+                min-height: 40px;
             }
 
             .status-cell {
                 align-items: stretch;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .stats,
+            .quick-filters,
+            .dashboard-actions {
+                grid-template-columns: 1fr;
+            }
+
+            td {
+                grid-template-columns: 1fr;
+                gap: 5px;
             }
         }
     </style>
